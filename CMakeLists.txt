@@ -8,3 +8,6 @@ set_property(GLOBAL PROPERTY USE_FOLDER YES)
 add_subdirectory (Ext/JUCE)
 add_subdirectory(Modules)
 
+enable_testing()
+add_subdirectory(Tests)
+
