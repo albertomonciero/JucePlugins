@@ -26,7 +26,7 @@ namespace TestHelpers
         float _value = 0.0f;
     };
 
-    juce::AudioBuffer<float> impulseResponseGenerator(juce::dsp::ProcessorBase& processorToTest, size_t numChannels, size_t length) 
+    static juce::AudioBuffer<float> impulseResponseGenerator(juce::dsp::ProcessorBase& processorToTest, size_t numChannels, size_t length) 
     {
         juce::AudioBuffer<float> pulse(numChannels, length);
         pulse.clear();
@@ -43,7 +43,7 @@ namespace TestHelpers
         return pulse;
     }
 
-    ComplexBuffer getFrequencyResponse(const juce::AudioBuffer<float>& impulseResponse, size_t fftSize)
+    static ComplexBuffer getFrequencyResponse(const juce::AudioBuffer<float>& impulseResponse, size_t fftSize)
     {
         size_t numSamples = static_cast<size_t> (impulseResponse.getNumSamples());
         size_t numChannels = static_cast<size_t> (impulseResponse.getNumChannels());
@@ -75,7 +75,7 @@ namespace TestHelpers
         return multiChannelsFrequencyResponse;
     } 
 
-    juce::AudioBuffer<float> getMagnitudeResponse (const ComplexBuffer& multiChannelsFrequencyResponse)
+    static juce::AudioBuffer<float> getMagnitudeResponse (const ComplexBuffer& multiChannelsFrequencyResponse)
     {
         juce::AudioBuffer<float> multiChannelsMagnitudeResponse(multiChannelsFrequencyResponse.size(), multiChannelsFrequencyResponse[0].size() / 2);
 
