@@ -19,3 +19,4 @@ BEGIN_JUCE_MODULE_DECLARATION
 #include <juce_dsp/juce_dsp.h>
 
 #include "Source/OnePoleFilter.h"
+#include "Source/VariableDelayLine.h"
