@@ -26,13 +26,13 @@ namespace TestHelpers
 
         size_t fftSize = static_cast<size_t> (GENERATE(4, 8, 16));
         
-        ComplexBuffer spectrum = getFrequencyResponse(actual, fftSize);
+        ComplexBuffer complexBuffer = getFrequencyResponse(actual, fftSize);
 
         for (size_t ch = 0; ch < static_cast<size_t> (actual.getNumChannels()); ch++)
             for (size_t i = 0; i < fftSize; i++)
             {
-                CHECK(spectrum[ch][i].real() == expected);
-                CHECK(spectrum[ch][i].imag() == 0.0);
+                CHECK(complexBuffer[ch][i].real() == expected);
+                CHECK(complexBuffer[ch][i].imag() == 0.0);
             }
     }
 }
