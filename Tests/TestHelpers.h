@@ -2,6 +2,7 @@
 
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/generators/catch_generators.hpp>
+#include <catch2/matchers/catch_matchers_floating_point.hpp>
 #include <juce_dsp/juce_dsp.h>
 
 namespace TestHelpers
@@ -84,5 +85,38 @@ namespace TestHelpers
                 multiChannelsMagnitudeResponse.setSample(ch, i, std::abs(multiChannelsFrequencyResponse[ch][i]));
 
         return multiChannelsMagnitudeResponse;
+    }
+
+    static juce::AudioBuffer<float> getPhaseResponse (const ComplexBuffer& multiChannelsFrequencyResponse)
+    {
+        juce::AudioBuffer<float> multiChannelsPhaseResponse(multiChannelsFrequencyResponse.size(), multiChannelsFrequencyResponse[0].size() / 2);
+
+        for (size_t ch = 0; ch < multiChannelsFrequencyResponse.size(); ch++)
+            for (size_t i = 0; i < multiChannelsFrequencyResponse[0].size() / 2; i++)
+                multiChannelsPhaseResponse.setSample(ch, i, std::arg(multiChannelsFrequencyResponse[ch][i]));
+
+        return multiChannelsPhaseResponse;
+    }
+
+    static void unwrapPhase(float* phase, float* unwrappedPhase, size_t length) 
+    {
+        unwrappedPhase[0] = phase[0];
+
+        float phaseCorrection = 0.0f;
+        float diff, diffModulo;
+
+        for (size_t i = 1; i < length; i++)
+        {
+            diff = phase[i] - phase[i - 1];
+            diffModulo = fmod(diff + 3 * M_PI, 2 * M_PI) - M_PI;
+
+            if (diffModulo == -M_PI && diff > 0)
+                diffModulo = M_PI;
+
+            if (abs(diff) >= M_PI)
+                phaseCorrection += (diffModulo - diff);
+        
+            unwrappedPhase[i] = phase[i] + phaseCorrection;
+        }      
     }
 }
