@@ -98,7 +98,7 @@ namespace TestHelpers
         return multiChannelsPhaseResponse;
     }
 
-    static void unwrapPhase(float* phase, float* unwrappedPhase, size_t length) 
+    static void unwrapPhase(const float* phase, float* unwrappedPhase, size_t length) 
     {
         unwrappedPhase[0] = phase[0];
 
