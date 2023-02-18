@@ -20,3 +20,4 @@ BEGIN_JUCE_MODULE_DECLARATION
 
 #include "Source/OnePoleFilter.h"
 #include "Source/VariableDelayLine.h"
+#include "Source/VariableDelayAllpass.h"
