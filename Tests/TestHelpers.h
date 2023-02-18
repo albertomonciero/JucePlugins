@@ -87,17 +87,6 @@ namespace TestHelpers
         return multiChannelsMagnitudeResponse;
     }
 
-    static juce::AudioBuffer<float> getPhaseResponse (const ComplexBuffer& multiChannelsFrequencyResponse)
-    {
-        juce::AudioBuffer<float> multiChannelsPhaseResponse(multiChannelsFrequencyResponse.size(), multiChannelsFrequencyResponse[0].size() / 2);
-
-        for (size_t ch = 0; ch < multiChannelsFrequencyResponse.size(); ch++)
-            for (size_t i = 0; i < multiChannelsFrequencyResponse[0].size() / 2; i++)
-                multiChannelsPhaseResponse.setSample(ch, i, std::arg(multiChannelsFrequencyResponse[ch][i]));
-
-        return multiChannelsPhaseResponse;
-    }
-
     static void unwrapPhase(const float* phase, float* unwrappedPhase, size_t length) 
     {
         unwrappedPhase[0] = phase[0];
@@ -118,5 +107,27 @@ namespace TestHelpers
         
             unwrappedPhase[i] = phase[i] + phaseCorrection;
         }      
+    }
+
+    static juce::AudioBuffer<float> getPhaseResponse (const ComplexBuffer& multiChannelsFrequencyResponse, bool unwrap = true)
+    {
+        juce::AudioBuffer<float> multiChannelsPhaseResponse(multiChannelsFrequencyResponse.size(), multiChannelsFrequencyResponse[0].size() / 2);
+
+        for (size_t ch = 0; ch < multiChannelsFrequencyResponse.size(); ch++)
+            for (size_t i = 0; i < multiChannelsFrequencyResponse[0].size() / 2; i++)
+                multiChannelsPhaseResponse.setSample(ch, i, std::arg(multiChannelsFrequencyResponse[ch][i]));
+
+        if (! unwrap)
+            return multiChannelsPhaseResponse;
+        
+        else
+        {
+            juce::AudioBuffer<float> unwrappedPhase(multiChannelsPhaseResponse.getNumChannels(), multiChannelsPhaseResponse.getNumSamples());
+
+            for (auto ch = 0; ch < multiChannelsPhaseResponse.getNumChannels(); ch++)
+                unwrapPhase(multiChannelsPhaseResponse.getReadPointer(ch), unwrappedPhase.getWritePointer(ch), static_cast<size_t>(unwrappedPhase.getNumSamples()));
+
+            return unwrappedPhase;
+        }
     }
 }
