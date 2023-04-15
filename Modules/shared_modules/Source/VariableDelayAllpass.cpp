@@ -1,12 +1,12 @@
 #include "VariableDelayAllpass.h"
 
 VariableDelayAllpass::VariableDelayAllpass(size_t maxDelayInSamples, size_t numTaps)
-    :   _delayLine(maxDelayInSamples),
-        _numTaps(numTaps)
+    : _delayLine(maxDelayInSamples),
+      _numTaps(numTaps)
 {
 }
 
-void VariableDelayAllpass::prepare (const juce::dsp::ProcessSpec& spec)
+void VariableDelayAllpass::prepare(const juce::dsp::ProcessSpec &spec)
 {
     _delayLine.prepare(spec);
 
@@ -18,7 +18,7 @@ void VariableDelayAllpass::prepare (const juce::dsp::ProcessSpec& spec)
 
     for (size_t ch = 0; ch < spec.numChannels; ch++)
     {
-        _tapOutBuffer.emplace_back(_numTaps, spec.maximumBlockSize);  
+        _tapOutBuffer.emplace_back(_numTaps, spec.maximumBlockSize);
         _tapOutBuffer[ch].clear();
     }
 
@@ -36,15 +36,15 @@ void VariableDelayAllpass::reset()
         _delayInSamples[i] = 0.0f;
 }
 
-void VariableDelayAllpass::process (const juce::dsp::ProcessContextReplacing<float>& context)
+void VariableDelayAllpass::process(const juce::dsp::ProcessContextReplacing<float> &context)
 {
-    auto& outputBlock      = context.getOutputBlock();
+    auto &outputBlock = context.getOutputBlock();
     const auto numChannels = outputBlock.getNumChannels();
-    const auto numSamples  = outputBlock.getNumSamples();
+    const auto numSamples = outputBlock.getNumSamples();
 
     for (size_t ch = 0; ch < numChannels; ch++)
     {
-        auto* samples = outputBlock.getChannelPointer (ch);
+        auto *samples = outputBlock.getChannelPointer(ch);
 
         for (size_t i = 0; i < numSamples; i++)
         {
@@ -64,14 +64,14 @@ void VariableDelayAllpass::process (const juce::dsp::ProcessContextReplacing<flo
     }
 }
 
-void VariableDelayAllpass::setDelayInSamples (float newDelayInSamples)
+void VariableDelayAllpass::setDelayInSamples(float newDelayInSamples)
 {
     jassert(newDelayInSamples <= _delayLine.getMaximumDelayInSamples());
-    
+
     _delayInSamples[0] = newDelayInSamples;
 }
 
-void VariableDelayAllpass::setDelayInSamples (size_t tapIndex, float newDelayInSamples)
+void VariableDelayAllpass::setDelayInSamples(size_t tapIndex, float newDelayInSamples)
 {
     jassert(newDelayInSamples <= _delayLine.getMaximumDelayInSamples());
     jassert(tapIndex < _numTaps);
@@ -79,12 +79,12 @@ void VariableDelayAllpass::setDelayInSamples (size_t tapIndex, float newDelayInS
     _delayInSamples[tapIndex] = newDelayInSamples;
 }
 
-void VariableDelayAllpass::setGain (float newGain)
+void VariableDelayAllpass::setGain(float newGain)
 {
     _gain = newGain;
 }
 
-const float* VariableDelayAllpass::getTapOutBuffer(size_t channelIndex, size_t tapIndex) const
+const float *VariableDelayAllpass::getTapOutBuffer(size_t channelIndex, size_t tapIndex) const
 {
     jassert(channelIndex < _tapOutBuffer.size());
     jassert(tapIndex < _numTaps);

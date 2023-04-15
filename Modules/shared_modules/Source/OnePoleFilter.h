@@ -35,4 +35,4 @@ namespace OnePoleFilter
         std::vector<float> _zZero;
         float _fs = 0.0f;
     };
-}
+} // namespace OnePoleFilter

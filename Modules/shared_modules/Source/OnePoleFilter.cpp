@@ -55,9 +55,9 @@ namespace OnePoleFilter
 
     void Lowpass::process (const juce::dsp::ProcessContextReplacing<float>& context)
     {
-        auto& outputBlock      = context.getOutputBlock();
+        auto& outputBlock = context.getOutputBlock();
         const auto numChannels = outputBlock.getNumChannels();
-        const auto numSamples  = outputBlock.getNumSamples();
+        const auto numSamples = outputBlock.getNumSamples();
 
         for (size_t ch = 0; ch < numChannels; ch++)
         {
@@ -133,9 +133,9 @@ namespace OnePoleFilter
 
     void Highpass::process (const juce::dsp::ProcessContextReplacing<float>& context)
     {
-        auto& outputBlock      = context.getOutputBlock();
+        auto& outputBlock = context.getOutputBlock();
         const auto numChannels = outputBlock.getNumChannels();
-        const auto numSamples  = outputBlock.getNumSamples();
+        const auto numSamples = outputBlock.getNumSamples();
 
         for (size_t ch = 0; ch < numChannels; ch++)
         {
@@ -149,5 +149,4 @@ namespace OnePoleFilter
             }
         }
     }
-}
-    
+} // namespace OnePoleFilter
