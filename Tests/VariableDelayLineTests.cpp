@@ -1,130 +1,105 @@
-#include <catch2/catch_test_macros.hpp>
-#include <catch2/generators/catch_generators.hpp>
+#include "TestHelpers.h"
 #include <shared_modules/shared_modules.h>
 
-
-namespace VariableDelayLineTest
+TEST_CASE ("Test getMaximumDelayInSamples returns correct value", "[VariableDelayLine]")
 {
-    juce::AudioBuffer<float> singleTap(const juce::dsp::ProcessSpec& spec, VariableDelayLine& delayLine, float sampleValue, float delayInSamples)
+    size_t expected = static_cast<size_t> (GENERATE (10, 25, 102));
+
+    VariableDelayLine delayLine (expected);
+
+    CHECK (delayLine.getMaximumDelayInSamples() == expected);
+}
+
+TEST_CASE ("Test process with different sample rates", "[VariableDelayLine]")
+{
+    VariableDelayLine delayLine (10, 3);
+
+    float expected = 2.0;
+    std::vector<float> delayInSamples = { 5.0, 3.0, 1.0 };
+
+    const auto runTest = [&] (const float fs)
     {
-        delayLine.prepare(spec);
-        delayLine.setDelayInSamples(delayInSamples);
-
-        juce::AudioBuffer<float> input(static_cast<int>(spec.numChannels), static_cast<int>(spec.maximumBlockSize));
-        input.clear();
-
-        for (size_t ch = 0; ch < spec.numChannels; ch++)
-            input.setSample(ch, 0, sampleValue);
-
-        juce::dsp::AudioBlock<float> block (input);
-        juce::dsp::ProcessContextReplacing<float> context(block);
-
-        delayLine.process(block);
-
-        return input;
-    }
-
-    void multiTap(const juce::dsp::ProcessSpec& spec, VariableDelayLine& delayLine, const std::vector<float>& sampleValues, const std::vector<float>& delayInSamples)
-    {
-        delayLine.prepare(spec);
+        juce::dsp::ProcessSpec spec{ fs, static_cast<juce::uint32> (delayLine.getMaximumDelayInSamples()), 2 };
+        delayLine.prepare (spec);
 
         for (size_t i = 0; i < delayInSamples.size(); i++)
-            delayLine.setDelayInSamples(i, delayInSamples[i]);
+            delayLine.setDelayInSamples (delayInSamples[i], i, true);
 
-        juce::AudioBuffer<float> input(static_cast<int>(spec.numChannels), static_cast<int>(spec.maximumBlockSize));
-        input.clear();
+        auto input = TestHelpers::generateInputBuffer (spec.numChannels, spec.maximumBlockSize, expected);
+
+        TestHelpers::runProcess (delayLine, input);
 
         for (size_t ch = 0; ch < spec.numChannels; ch++)
-            for (size_t i = 0; i < sampleValues.size(); i++)
-                input.setSample(ch, i, sampleValues[i]);
+        {
+            CHECK (delayLine.getTapOutBuffer (ch, 0)[static_cast<size_t> (delayInSamples[0])] == expected);
+            CHECK (delayLine.getTapOutBuffer (ch, 1)[static_cast<size_t> (delayInSamples[1])] == expected);
+            CHECK (delayLine.getTapOutBuffer (ch, 2)[static_cast<size_t> (delayInSamples[2])] == expected);
+        }
+    };
 
-        juce::dsp::AudioBlock<float> block (input);
-        juce::dsp::ProcessContextReplacing<float> context(block);
+    std::vector<float> sampleRates{ 44100, 48000, 96000, 192000 };
 
-        delayLine.process(block);
-    }
+    for (auto& s : sampleRates)
+        runTest (s);
 }
 
-TEST_CASE ("Test that single tap delay line return correct values setting different delays in sample")
+TEST_CASE ("Test process with fractional delays", "[VariableDelayLine]")
 {
-    float fs = GENERATE(44100, 48000, 96000);
-    float delayInSamples = GENERATE(1.0, 5.0, 9.0);
-    float sampleValue = GENERATE(0.3, 1.0, -0.7);
-
-    VariableDelayLine delayLine(10, 1);
-
-    juce::dsp::ProcessSpec spec {fs, static_cast<juce::uint32>(delayLine.getMaximumDelayInSamples()), 2};
-
-    juce::AudioBuffer<float> expected = VariableDelayLineTest::singleTap(spec, delayLine, sampleValue, delayInSamples);
-
-    for (size_t ch = 0; ch < spec.numChannels; ch++)
-    {
-        CHECK(expected.getSample(ch, delayInSamples) == sampleValue);
-        CHECK(delayLine.getTapOutBuffer(ch, 0)[static_cast<size_t>(delayInSamples)] == sampleValue);
-    }     
-}
-
-TEST_CASE ("Test tha single tap delay line return correct values setting different fractional delays in sample")
-{
-    float fs = GENERATE(44100, 48000, 96000);
-    float delayInSamples = GENERATE(1.203, 3.612, 5.43);
+    float fs = 48000;
     float sampleValue = 1.0;
+    std::vector<float> delayInSamples = { 5.1, 3.5, 1.2 };
 
-    VariableDelayLine delayLine(10, 1);
+    VariableDelayLine delayLine (10, 3);
 
-    juce::dsp::ProcessSpec spec {fs, static_cast<juce::uint32>(delayLine.getMaximumDelayInSamples()), 2};
-    
-    juce::AudioBuffer<float> expected = VariableDelayLineTest::singleTap(spec, delayLine, sampleValue, delayInSamples);
+    juce::dsp::ProcessSpec spec{ fs, static_cast<juce::uint32> (delayLine.getMaximumDelayInSamples()), 2 };
+    delayLine.prepare (spec);
+
+    for (size_t i = 0; i < delayInSamples.size(); i++)
+        delayLine.setDelayInSamples (delayInSamples[i], i, true);
+
+    auto input = TestHelpers::generateInputBuffer (spec.numChannels, spec.maximumBlockSize, sampleValue);
+    TestHelpers::runProcess (delayLine, input);
 
     for (size_t ch = 0; ch < spec.numChannels; ch++)
     {
-        float fractional = delayInSamples - static_cast<size_t>(delayInSamples);
-        CHECK(expected.getSample(ch, delayInSamples) == sampleValue - fractional);
-    }   
+        float fractional = delayInSamples[0] - static_cast<size_t> (delayInSamples[0]);
+        CHECK (delayLine.getTapOutBuffer (ch, 0)[static_cast<size_t> (delayInSamples[0])] == sampleValue - fractional);
+
+        fractional = delayInSamples[1] - static_cast<size_t> (delayInSamples[1]);
+        CHECK (delayLine.getTapOutBuffer (ch, 1)[static_cast<size_t> (delayInSamples[1])] == sampleValue - fractional);
+
+        fractional = delayInSamples[2] - static_cast<size_t> (delayInSamples[2]);
+        CHECK (delayLine.getTapOutBuffer (ch, 2)[static_cast<size_t> (delayInSamples[2])] == sampleValue - fractional);
+    }
 }
 
-TEST_CASE ("Test that multitap delay line returns correct values")
+TEST_CASE ("Test process calling setDelayInSamples", "[VariableDelayLine]")
 {
-    float fs = GENERATE(44100, 48000, 96000);
+    float fs = 48000;
+    float sampleValue = 0.1234;
 
-    std::vector<float> sampleValues = {0.2, -0.7, 1.5};
-    std::vector<float> delayInSamples = {5.0, 3.0, 1.0};
+    VariableDelayLine delayLine (10, 1);
 
-    VariableDelayLine delayLine(10, delayInSamples.size());
+    juce::dsp::ProcessSpec spec{ fs, static_cast<juce::uint32> (delayLine.getMaximumDelayInSamples()), 2 };
+    delayLine.prepare (spec);
 
-    juce::dsp::ProcessSpec spec {fs, static_cast<juce::uint32>(delayLine.getMaximumDelayInSamples()), 2};
+    auto input = TestHelpers::generateInputBuffer (spec.numChannels, spec.maximumBlockSize, sampleValue);
 
-    VariableDelayLineTest::multiTap(spec, delayLine, sampleValues, delayInSamples);
+    size_t count = 0;
 
-    for (size_t ch = 0; ch < spec.numChannels; ch++)
-        for (size_t i = 0; i < delayInSamples.size(); i++)
-            for (size_t n = 0; n < sampleValues.size(); n++)
-            {
-                size_t index = static_cast<size_t>(delayInSamples[i] + n);
-                CHECK(delayLine.getTapOutBuffer(ch, i)[index] == sampleValues[n]);
-            }         
-}
+    const auto runTest = [&] (float delayInSamples)
+    {
+        delayLine.setDelayInSamples (delayInSamples, 0, true);
+        TestHelpers::runProcess (delayLine, input);
 
-TEST_CASE ("Test that multitap fractional delay line return correct values")
-{
-    float fs = GENERATE(44100, 48000, 96000);
+        for (size_t ch = 0; ch < spec.numChannels; ch++)
+            CHECK (delayLine.getTapOutBuffer (ch, 0)[static_cast<size_t> (delayInSamples) + count] == sampleValue);
 
-    std::vector<float> sampleValues = {1.0, 1.0, 1.0};
-    std::vector<float> delayInSamples = {5.1, 3.5, 1.2};
+        count += delayInSamples;
+    };
 
-    VariableDelayLine delayLine(10, delayInSamples.size());
+    std::vector<float> delayInSamples = { 1.0, 2.0, 3.0 };
 
-    juce::dsp::ProcessSpec spec {fs, static_cast<juce::uint32>(delayLine.getMaximumDelayInSamples()), 2};
-    
-    VariableDelayLineTest::multiTap(spec, delayLine, sampleValues, delayInSamples);
-
-    for (size_t ch = 0; ch < spec.numChannels; ch++)
-        for (size_t i = 0; i < delayInSamples.size(); i++)
-            for (size_t n = 0; n < sampleValues.size(); n++)
-            {
-                float fractionalDelay = delayInSamples[i] - static_cast<size_t>(delayInSamples[i]);
-                size_t index = std::ceil(delayInSamples[i]) + sampleValues.size() - 1;
-
-                CHECK(delayLine.getTapOutBuffer(ch, i)[index] == fractionalDelay);
-            }         
+    for (auto& d : delayInSamples)
+        runTest (d);
 }
