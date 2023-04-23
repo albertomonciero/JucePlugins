@@ -9,15 +9,14 @@ public:
     virtual void reset() override;
     virtual void process (const juce::dsp::ProcessContextReplacing<float>& context) override;
 
-    void setDelayInSamples (float newDelayInSamples, bool force = false);
-    void setDelayInSamples (size_t tapIndex, float newDelayInSamples, bool force = false);
+    void setDelayInSamples (float newDelayInSamples, size_t tapIndex = 0, bool force = false);
 
     const float* getTapOutBuffer (size_t channelIndex, size_t tapIndex) const;
     size_t getMaximumDelayInSamples() const;
 
 private:
     juce::dsp::DelayLine<float, juce::dsp::DelayLineInterpolationTypes::Linear> _delayLine;
-    std::vector<juce::LinearSmoothedValue<float>> _delayInSamples;
+    std::vector<std::vector<juce::LinearSmoothedValue<float>>> _delayInSamples;
     size_t _numTaps;
     std::vector<juce::AudioBuffer<float>> _tapOutBuffer;
 };
