@@ -85,21 +85,19 @@ TEST_CASE ("Test process calling setDelayInSamples", "[VariableDelayLine]")
 
     auto input = TestHelpers::generateInputBuffer (spec.numChannels, spec.maximumBlockSize, sampleValue);
 
-    size_t count = 0;
-
-    const auto runTest = [&] (float delayInSamples)
+    const auto runTest = [&] (const std::pair<float, size_t>& bufferIndexPerDelay)
     {
-        delayLine.setDelayInSamples (delayInSamples, 0, true);
+        delayLine.setDelayInSamples (bufferIndexPerDelay.first, 0, true);
         TestHelpers::runProcess (delayLine, input);
 
         for (size_t ch = 0; ch < spec.numChannels; ch++)
-            CHECK (delayLine.getTapOutBuffer (ch, 0)[static_cast<size_t> (delayInSamples) + count] == sampleValue);
-
-        count += delayInSamples;
+            CHECK (delayLine.getTapOutBuffer (ch, 0)[bufferIndexPerDelay.second] == sampleValue);
     };
 
-    std::vector<float> delayInSamples = { 1.0, 2.0, 3.0 };
+    std::vector<std::pair<float, int>> expectedBufferIndexPerDelay = { { 1.0, 1 },
+                                                                       { 2.0, 3 },
+                                                                       { 3.0, 6 } };
 
-    for (auto& d : delayInSamples)
-        runTest (d);
+    for (auto& expected : expectedBufferIndexPerDelay)
+        runTest (expected);
 }
