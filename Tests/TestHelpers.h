@@ -27,19 +27,30 @@ namespace TestHelpers
         float _value = 0.0f;
     };
 
-    static juce::AudioBuffer<float> impulseResponseGenerator(juce::dsp::ProcessorBase& processorToTest, size_t numChannels, size_t length) 
+    static void runProcess (juce::dsp::ProcessorBase& processorToRun, juce::AudioBuffer<float>& input)
     {
-        juce::AudioBuffer<float> pulse(numChannels, length);
-        pulse.clear();
+        juce::dsp::AudioBlock<float> block (input);
+        juce::dsp::ProcessContextReplacing<float> context (block);
 
-        // generate single pulse
-        for (size_t ch = 0; ch < numChannels; ch++)
-            pulse.setSample(ch, 0, 1.0);
+        processorToRun.process (block);
+    }
 
-        // generate impulse response
-        juce::dsp::AudioBlock<float> block(pulse);
-        juce::dsp::ProcessContextReplacing context (block);
-        processorToTest.process(context);
+    static juce::AudioBuffer<float> generateInputBuffer (juce::uint32 numChannels, juce::uint32 numSamples, float sampleValue)
+    {
+        juce::AudioBuffer<float> input (static_cast<int> (numChannels), static_cast<int> (numSamples));
+        input.clear();
+
+        for (auto ch = 0; ch < input.getNumChannels(); ch++)
+            input.setSample (ch, 0, sampleValue);
+
+        return input;
+    }
+
+    static juce::AudioBuffer<float> impulseResponseGenerator (juce::dsp::ProcessorBase& processorToTest, size_t numChannels, size_t length)
+    {
+        auto pulse = generateInputBuffer (numChannels, length, 1.0);
+
+        runProcess (processorToTest, pulse);
 
         return pulse;
     }
